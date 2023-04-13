@@ -1,0 +1,47 @@
+# How to inject variables in Kubernetes manifest with Azure Pipelines?
+# https://medium.com/@katlimruiz/how-to-inject-variables-in-kubernetes-manifest-with-azure-pipelines-e598755be9b
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: __imageRepository__
+  namespace: __namespace__
+spec:
+  replicas: __kub-pod-instancecount__
+  selector:
+    matchLabels:
+      app: __imageRepository__
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5 
+  template:
+    metadata:
+      namespace: __namespace__
+      labels:
+        app: __imageRepository__
+    spec:
+      nodeSelector: 
+        "beta.kubernetes.io/os": linux
+      containers:
+      - name: __imageRepository__
+        image: __containerRegistry__/__imageRepository__:latest #__tag__
+        ports:
+        - containerPort: __targetPort__
+        env:
+        - name: APPINSIGHTS_CONNECTION_STRING
+          value: __APPINSIGHTS_CONNECTION_STRING__
+        readinessProbe:
+          exec:
+            command: ["/bin/grpc_health_probe", "-addr=:5544"]
+          initialDelaySeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 1
+        livenessProbe:
+          exec:
+            command: ["/bin/grpc_health_probe", "-addr=:5544"]
+          initialDelaySeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 1
+        
+

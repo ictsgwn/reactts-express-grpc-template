@@ -1,0 +1,5 @@
+{
+    "name": "prod-node-grpc-boiler",
+    "userPoolId": "ap-southeast-1_xxxx",
+    "region": "ap-southeast-1"
+}

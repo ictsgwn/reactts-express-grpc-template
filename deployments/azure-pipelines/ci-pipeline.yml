@@ -1,0 +1,48 @@
+# Build and push an image to Azure Container Registry
+# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
+
+trigger: # branch to trigger pipeline
+  branches:
+    include:
+      - ci
+  paths: 
+    exclude:
+      - deployments/azure-pipelines/staging-pipeline.yml
+      - deployments/azure-pipelines/release-pipeline.yml
+  
+resources:
+- repo: self
+
+variables:    
+  - name: vmImageName 
+    value: 'ubuntu-20.04'
+  
+stages:  
+  - stage: Test
+    displayName: Run test suites
+    jobs:
+    - job: Test
+      displayName: Test
+      pool:
+        vmImage: $(vmImageName)
+      steps: 
+      - script: |
+          echo 'Run tests'
+          npm install && npm run coverage
+        displayName: 'Run API tests'
+      - task: PublishTestResults@2
+        condition: succeededOrFailed()
+        inputs:
+          testResultsFormat: 'JUnit'
+          testResultsFiles: '**/jest-junit.xml'
+      - task: PublishCodeCoverageResults@1
+        inputs:
+          codeCoverageTool: 'cobertura'
+          summaryFileLocation: '**/cobertura-coverage.xml'
+      - task: BuildQualityChecks@7
+        inputs:
+          checkCoverage: true
+          coverageFailOption: 'fixed'
+          coverageType: 'lines'
+          coverageThreshold: '80'
+  
